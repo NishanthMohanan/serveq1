@@ -25,6 +25,7 @@ export default function Login({ onNext }) {
   };
 
   return (
+    
     <div className="card">
       <h2>Login</h2>
 
