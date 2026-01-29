@@ -257,14 +257,19 @@ def clear_notification(notification_id: str):
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR / "static"
 
-# Serve assets (JS, CSS, images)
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+app.mount(
+    "/assets",
+    StaticFiles(directory=FRONTEND_DIR / "assets"),
+    name="assets"
+)
 
-# Serve React app
 @app.get("/")
 def serve_index():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 @app.get("/{path:path}")
 def serve_spa(path: str):
+    file_path = FRONTEND_DIR / path
+    if file_path.exists():
+        return FileResponse(file_path)
     return FileResponse(FRONTEND_DIR / "index.html")
