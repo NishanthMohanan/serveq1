@@ -6,5 +6,13 @@
     "type": "CONFIRMATION",
     "created_at": "2026-01-29T10:03:49.348323+05:30",
     "cleared": false
+  },
+  {
+    "id": "50969008-b8b2-41de-a555-addec6cd3190",
+    "email": "ns",
+    "message": "Booking confirmed for 09:00 AM",
+    "type": "CONFIRMATION",
+    "created_at": "2026-01-29T23:08:36.043973+05:30",
+    "cleared": false
   }
 ]

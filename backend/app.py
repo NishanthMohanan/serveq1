@@ -54,42 +54,58 @@ def now_ist():
 # ---------------- AUTH ---------------- #
 
 @app.post("/login")
-def login(email: str, username: str):
-    otp = str(random.randint(100000, 999999))
-    OTP_STORE[email] = {
-        "otp": otp,
-        "expires_at": time.time() + 300,
-        "username": username
-    }
-    return {"otp": otp}  # demo only
+def login(email: str = None, username: str = None):
+    if not email or not username:
+        return {"error": "Missing email or username"}
+    
+    try:
+        otp = str(random.randint(100000, 999999))
+        OTP_STORE[email] = {
+            "otp": otp,
+            "expires_at": time.time() + 300,
+            "username": username
+        }
+        return {"otp": otp, "success": True}
+    except Exception as e:
+        return {"error": str(e), "success": False}
 
 @app.post("/verify-otp")
-def verify_otp(email: str, otp: str):
-    record = OTP_STORE.get(email)
-    if not record or record["otp"] != otp or time.time() > record["expires_at"]:
-        return {"success": False}
+def verify_otp(email: str = None, otp: str = None):
+    if not email or not otp:
+        return {"success": False, "error": "Missing email or otp"}
+    
+    try:
+        record = OTP_STORE.get(email)
+        if not record:
+            return {"success": False, "error": "No OTP found for this email"}
+        if record["otp"] != otp:
+            return {"success": False, "error": "Invalid OTP"}
+        if time.time() > record["expires_at"]:
+            return {"success": False, "error": "OTP expired"}
 
-    users = read_json(USERS_FILE, [])
-    user = next((u for u in users if u["email"] == email), None)
+        users = read_json(USERS_FILE, [])
+        user = next((u for u in users if u["email"] == email), None)
 
-    now = now_ist().isoformat()
+        now = now_ist().isoformat()
 
-    if not user:
-        user = {
-            "id": str(uuid.uuid4()),
-            "email": email,
-            "username": record["username"],
-            "created_at": now,
-            "last_login": now
-        }
-        users.append(user)
-    else:
-        user["last_login"] = now
+        if not user:
+            user = {
+                "id": str(uuid.uuid4()),
+                "email": email,
+                "username": record["username"],
+                "created_at": now,
+                "last_login": now
+            }
+            users.append(user)
+        else:
+            user["last_login"] = now
 
-    write_json(USERS_FILE, users)
-    OTP_STORE.pop(email, None)
+        write_json(USERS_FILE, users)
+        OTP_STORE.pop(email, None)
 
-    return {"success": True, "user": user}
+        return {"success": True, "user": user}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 # ---------------- SLOTS ---------------- #
 
@@ -220,7 +236,8 @@ def clear_notification(notification_id: str):
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR / "static"
 
-app.mount("/static", StaticFiles(directory=FRONTEND_DIR / "assets"), name="static")
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+
 
 @app.get("/")
 def serve_react():
