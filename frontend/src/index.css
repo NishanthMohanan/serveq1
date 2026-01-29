@@ -1,0 +1,138 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px; /* scalable base */
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f4f6f8;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+.app {
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+  padding: clamp(12px, 3vw, 24px);
+  min-height: 100vh;
+}
+
+h1 {
+  font-size: clamp(20px, 4vw, 28px);
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+h2 {
+  font-size: clamp(18px, 3.5vw, 24px);
+  margin-bottom: 12px;
+}
+
+p {
+  font-size: clamp(14px, 2.8vw, 16px);
+}
+
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: clamp(14px, 3vw, 24px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+  margin-bottom: 16px;
+}
+
+
+button {
+  font-size: clamp(14px, 2.8vw, 16px);
+}
+
+.primary-btn,
+.slot-btn {
+  width: 100%;
+  padding: clamp(12px, 3vw, 16px);
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Primary */
+.primary-btn {
+  background: #4f46e5;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Secondary */
+.slot-btn {
+  background: #e3e7ff;
+  margin: 6px 0;
+}
+
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: clamp(12px, 3vw, 14px);
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 16px; /* Prevent mobile zoom */
+  margin-bottom: 10px;
+}
+
+.alert,
+.queue-box,
+.banner {
+  padding: clamp(10px, 2.5vw, 14px);
+  border-radius: 12px;
+  font-size: clamp(13px, 2.5vw, 15px);
+}
+
+.alert {
+  background: #fff3cd;
+}
+
+.queue-box {
+  background: #f0f4ff;
+}
+
+.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.completed {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+
+
+/* Tablet and up */
+@media (min-width: 640px) {
+  .app {
+    padding: 24px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+/* Desktop and up */
+@media (min-width: 1024px) {
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+}

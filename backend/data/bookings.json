@@ -1,0 +1,9 @@
+[
+  {
+    "id": "b55e3147-3b78-4a38-b628-323df3c01825",
+    "email": "admin@example.com",
+    "slot_start": "2026-01-29T10:30:00+05:30",
+    "slot_end": "2026-01-29T11:00:00+05:30",
+    "status": "ACTIVE"
+  }
+]

@@ -1,9 +1,10 @@
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-export async function sendOtp(email) {
-  const res = await fetch(`${BASE_URL}/login?email=${email}`, {
-    method: "POST"
-  });
+export async function sendOtp(email, username) {
+  const res = await fetch(
+    `${BASE_URL}/login?email=${email}&username=${username}`,
+    { method: "POST" }
+  );
   return res.json();
 }
 

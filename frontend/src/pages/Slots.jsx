@@ -2,13 +2,11 @@ import { useEffect, useState } from "react";
 import { fetchSlots, bookSlot } from "../services/api";
 
 function getNext7Days() {
-  const days = [];
-  for (let i = 0; i < 7; i++) {
+  return [...Array(7)].map((_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
-    days.push(d.toISOString().split("T")[0]);
-  }
-  return days;
+    return d.toISOString().split("T")[0];
+  });
 }
 
 export default function Slots({ email, onBooked }) {
@@ -17,12 +15,11 @@ export default function Slots({ email, onBooked }) {
   const [slots, setSlots] = useState([]);
 
   useEffect(() => {
-    fetchSlots(selectedDate).then((res) => {
-      setSlots(res.slots);
-    });
+    fetchSlots(selectedDate).then(res => setSlots(res.slots));
   }, [selectedDate]);
 
   const book = async (slot) => {
+    if (!slot.is_bookable) return;
     await bookSlot(email, `${selectedDate} ${slot.start}-${slot.end}`);
     onBooked(`${selectedDate} ${slot.start} - ${slot.end}`);
   };
@@ -35,20 +32,24 @@ export default function Slots({ email, onBooked }) {
         value={selectedDate}
         onChange={(e) => setSelectedDate(e.target.value)}
       >
-        {dates.map((d) => (
-          <option key={d} value={d}>
-            {d}
-          </option>
+        {dates.map(d => (
+          <option key={d} value={d}>{d}</option>
         ))}
       </select>
 
       <h3>Available Slots</h3>
 
       {slots.map((s, i) => (
-  <button key={i} onClick={() => book(s)}>
-    {s.start} – {s.end}
-  </button>
-))}
+        <button
+          key={i}
+          className="slot-btn"
+          disabled={!s.is_bookable}
+          onClick={() => book(s)}
+          style={{ opacity: s.is_bookable ? 1 : 0.5 }}
+        >
+          {s.start} – {s.end}
+        </button>
+      ))}
     </div>
   );
 }

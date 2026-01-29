@@ -1,0 +1,16 @@
+{
+  "name": "serveq",
+  "region": "iad",
+  "git": {
+    "deployKeyId": ""
+  },
+  "build": {
+    "builder": "paketobuildpacks/builder:base"
+  },
+  "env": {
+    "VITE_API_URL": {
+      "description": "Frontend API URL",
+      "required": true
+    }
+  }
+}

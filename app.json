@@ -1,0 +1,24 @@
+{
+  "name": "ServeQ - Queue Management",
+  "description": "Queue and appointment management system",
+  "repository": "https://github.com/nishanthmohanan/serveq1",
+  "keywords": ["queue", "appointments", "booking"],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    },
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "addons": [],
+  "env": {
+    "VITE_API_URL": {
+      "description": "Frontend API endpoint URL",
+      "required": true
+    }
+  },
+  "scripts": {
+    "postdeploy": "cd backend && python -c 'import json; from pathlib import Path; data_dir = Path(\"data\"); data_dir.mkdir(exist_ok=True); [Path(f\"data/{f}\").touch() for f in [\"users.json\", \"bookings.json\", \"notifications.json\", \"slots.json\"]]'"
+  }
+}

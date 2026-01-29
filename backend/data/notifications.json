@@ -1,0 +1,10 @@
+[
+  {
+    "id": "4e0fcc22-bcb6-4a23-956e-340cca8f8065",
+    "email": "admin@example.com",
+    "message": "Booking confirmed for 10:30 AM",
+    "type": "CONFIRMATION",
+    "created_at": "2026-01-29T10:03:49.348323+05:30",
+    "cleared": false
+  }
+]
