@@ -1,11 +1,15 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : "http://localhost:8000");
 
 export async function sendOtp(email, username) {
   const res = await fetch(
     `${BASE_URL}/login?email=${email}&username=${username}`,
     { method: "POST" }
   );
-  return res.json();
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data.error || "Failed to generate OTP");
+  }
+  return data;
 }
 
 export async function verifyOtp(email, otp) {
@@ -13,17 +17,30 @@ export async function verifyOtp(email, otp) {
     `${BASE_URL}/verify-otp?email=${email}&otp=${otp}`,
     { method: "POST" }
   );
-  return res.json();
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data.error || "Failed to verify OTP");
+  }
+  return data;
 }
 
 export async function fetchSlots(date) {
   const res = await fetch(`${BASE_URL}/slots?date=${date}`);
-  return res.json();
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data.error || "Failed to fetch slots");
+  }
+  return data;
 }
 
 export async function bookSlot(email, slot) {
-  return fetch(
+  const res = await fetch(
     `${BASE_URL}/book?email=${email}&slot=${slot}`,
     { method: "POST" }
   );
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data.error || "Failed to book slot");
+  }
+  return data;
 }
