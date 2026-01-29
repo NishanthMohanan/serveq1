@@ -31,7 +31,7 @@ BOOKINGS_FILE = DATA_DIR / "bookings.json"
 NOTIFICATIONS_FILE = DATA_DIR / "notifications.json"
 SLOTS_FILE = DATA_DIR / "slots.json"
 
-OTP_STORE = {}  # email -> { otp, expires_at, username }
+OTP_STORE = {}  
 
 # ---------------- HELPERS ---------------- #
 
@@ -224,4 +224,9 @@ app.mount("/static", StaticFiles(directory=FRONTEND_DIR / "assets"), name="stati
 
 @app.get("/")
 def serve_react():
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+
+@app.get("/{full_path:path}")
+def serve_react_fallback(full_path: str):
     return FileResponse(FRONTEND_DIR / "index.html")
