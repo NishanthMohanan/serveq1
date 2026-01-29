@@ -12,5 +12,12 @@
     "slot_start": "2026-01-30T09:00:00+05:30",
     "slot_end": "2026-01-30T09:30:00+05:30",
     "status": "ACTIVE"
+  },
+  {
+    "id": "d9c87bd7-b5d2-430b-be8c-30c8bacbcfa0",
+    "email": "nishanthmohanannair@gmail.com",
+    "slot_start": "2026-01-30T09:30:00+05:30",
+    "slot_end": "2026-01-30T10:00:00+05:30",
+    "status": "ACTIVE"
   }
 ]

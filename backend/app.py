@@ -16,6 +16,10 @@ class VerifyOtpRequest(BaseModel):
     email: str
     otp: str
 
+class BookSlotRequest(BaseModel):
+    email: str
+    slot: str
+
 
 
 # ---------------- APP SETUP ---------------- #
@@ -61,7 +65,7 @@ def now_ist():
 
 # ---------------- AUTH ---------------- #
 
-@app.post("/login")
+@app.post("/api/login")
 def login(data: LoginRequest):
     email = data.email
     username = data.username
@@ -79,7 +83,7 @@ def login(data: LoginRequest):
     except Exception as e:
         return {"error": str(e), "success": False}
 
-@app.post("/verify-otp")
+@app.post("/api/verify-otp")
 def verify_otp(data: VerifyOtpRequest):
     email = data.email
     otp = data.otp
@@ -121,9 +125,12 @@ def verify_otp(data: VerifyOtpRequest):
 
 # ---------------- SLOTS ---------------- #
 
-@app.get("/slots")
+@app.get("/api/slots")
 def get_slots(date: str):
-    config = read_json(SLOTS_FILE, {})["working_hours"]
+    slots_data = read_json(SLOTS_FILE, {})
+    config = slots_data.get("working_hours")
+    if not config:
+        return {"error": "Slot configuration missing"}
     start_h, start_m = map(int, config["start"].split(":"))
     end_h, end_m = map(int, config["end"].split(":"))
     interval = config["interval_minutes"]
@@ -154,8 +161,10 @@ def get_slots(date: str):
 
 # ---------------- BOOKINGS ---------------- #
 
-@app.post("/book")
-def book_slot(email: str, slot: str):
+@app.post("/api/book")
+def book_slot(data: BookSlotRequest):
+    email = data.email
+    slot = data.slot
     bookings = read_json(BOOKINGS_FILE, [])
 
     # one active booking per user
@@ -204,7 +213,7 @@ def book_slot(email: str, slot: str):
 
 # ---------------- NOTIFICATIONS ---------------- #
 
-@app.get("/notifications")
+@app.get("/api/notifications")
 def get_notifications(email: str):
     bookings = read_json(BOOKINGS_FILE, [])
     notifications = read_json(NOTIFICATIONS_FILE, [])
@@ -236,7 +245,7 @@ def get_notifications(email: str):
         if n["email"] == email and not n["cleared"]
     ]
 
-@app.post("/notifications/clear")
+@app.post("/api/notifications/clear")
 def clear_notification(notification_id: str):
     notifications = read_json(NOTIFICATIONS_FILE, [])
     for n in notifications:
@@ -256,7 +265,6 @@ app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 def serve_index():
     return FileResponse(FRONTEND_DIR / "index.html")
 
-# SPA fallback (for React Router / direct links)
 @app.get("/{path:path}")
 def serve_spa(path: str):
     return FileResponse(FRONTEND_DIR / "index.html")

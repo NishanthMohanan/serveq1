@@ -14,5 +14,13 @@
     "type": "CONFIRMATION",
     "created_at": "2026-01-29T23:08:36.043973+05:30",
     "cleared": false
+  },
+  {
+    "id": "752940bc-41c9-4d72-a4d0-5aa1d3bc70ac",
+    "email": "nishanthmohanannair@gmail.com",
+    "message": "Booking confirmed for 09:30 AM",
+    "type": "CONFIRMATION",
+    "created_at": "2026-01-30T00:26:13.184464+05:30",
+    "cleared": false
   }
 ]
