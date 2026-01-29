@@ -1,21 +1,16 @@
 const BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  window.location.origin;
+  import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
 
 export const sendOtp = async (email, username) => {
   const res = await fetch(`${BASE_URL}/login`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, username }),
   });
 
-  if (!res.ok) {
-    throw new Error("OTP generation failed");
-  }
-
-  return res.json();
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error);
+  return data;
 };
 
 
@@ -47,10 +42,12 @@ export async function fetchSlots(date) {
 }
 
 export async function bookSlot(email, slot) {
-  const res = await fetch(
-    `${BASE_URL}/book?email=${email}&slot=${slot}`,
-    { method: "POST" }
-  );
+  const res = await fetch(`${BASE_URL}/book`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, slot }),
+  });
+
   const data = await res.json();
   if (!res.ok || data.error) {
     throw new Error(data.error || "Failed to book slot");
