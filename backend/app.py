@@ -7,6 +7,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import json, uuid, time, random
 import pytz
+from pydantic import BaseModel
+
+class LoginRequest(BaseModel):
+    email: str
+    username: str
+class VerifyOtpRequest(BaseModel):
+    email: str
+    otp: str
 
 
 
@@ -54,7 +62,9 @@ def now_ist():
 # ---------------- AUTH ---------------- #
 
 @app.post("/login")
-def login(email: str = None, username: str = None):
+def login(data: LoginRequest):
+    email = data.email
+    username = data.username
     if not email or not username:
         return {"error": "Missing email or username"}
     
@@ -70,7 +80,9 @@ def login(email: str = None, username: str = None):
         return {"error": str(e), "success": False}
 
 @app.post("/verify-otp")
-def verify_otp(email: str = None, otp: str = None):
+def verify_otp(data: VerifyOtpRequest):
+    email = data.email
+    otp = data.otp
     if not email or not otp:
         return {"success": False, "error": "Missing email or otp"}
     
@@ -236,14 +248,15 @@ def clear_notification(notification_id: str):
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR / "static"
 
-app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+# Serve assets (JS, CSS, images)
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
-
+# Serve React app
 @app.get("/")
-def serve_react():
+def serve_index():
     return FileResponse(FRONTEND_DIR / "index.html")
 
-
-@app.get("/{full_path:path}")
-def serve_react_fallback(full_path: str):
+# SPA fallback (for React Router / direct links)
+@app.get("/{path:path}")
+def serve_spa(path: str):
     return FileResponse(FRONTEND_DIR / "index.html")
