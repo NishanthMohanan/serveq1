@@ -19,5 +19,19 @@
     "slot_start": "2026-01-30T09:30:00+05:30",
     "slot_end": "2026-01-30T10:00:00+05:30",
     "status": "ACTIVE"
+  },
+  {
+    "id": "1cdd6235-37a0-4142-873a-c12bde0cf8da",
+    "email": "pub@gmail.com",
+    "slot_start": "2026-01-30T10:00:00+05:30",
+    "slot_end": "2026-01-30T10:30:00+05:30",
+    "status": "ACTIVE"
+  },
+  {
+    "id": "460d58c1-8846-4090-bb98-c671f6415099",
+    "email": "nishanth@gmail.com",
+    "slot_start": "2026-01-30T10:30:00+05:30",
+    "slot_end": "2026-01-30T11:00:00+05:30",
+    "status": "ACTIVE"
   }
 ]

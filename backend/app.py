@@ -1,10 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from datetime import datetime, timedelta
-from pathlib import Path
 import json, uuid, time, random
 import pytz
 from pydantic import BaseModel
@@ -26,9 +25,11 @@ class BookSlotRequest(BaseModel):
 
 app = FastAPI()
 
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -57,8 +58,12 @@ def read_json(file, default):
         return default
 
 def write_json(file, data):
-    with open(file, "w") as f:
-        json.dump(data, f, indent=2)
+    try:
+        with open(file, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Failed to write {file.name}: {e}")
 
 def now_ist():
     return datetime.now(IST)
@@ -70,8 +75,8 @@ def login(data: LoginRequest):
     email = data.email
     username = data.username
     if not email or not username:
-        return {"error": "Missing email or username"}
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Missing email or username")
     try:
         otp = str(random.randint(100000, 999999))
         OTP_STORE[email] = {
@@ -79,25 +84,29 @@ def login(data: LoginRequest):
             "expires_at": time.time() + 300,
             "username": username
         }
-        return {"otp": otp, "success": True}
+        return {"success": True, "otp": otp}
     except Exception as e:
-        return {"error": str(e), "success": False}
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=str(e))
 
 @app.post("/api/verify-otp")
 def verify_otp(data: VerifyOtpRequest):
     email = data.email
     otp = data.otp
     if not email or not otp:
-        return {"success": False, "error": "Missing email or otp"}
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Missing email or otp")
     try:
         record = OTP_STORE.get(email)
         if not record:
-            return {"success": False, "error": "No OTP found for this email"}
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="No OTP found for this email")
         if record["otp"] != otp:
-            return {"success": False, "error": "Invalid OTP"}
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Invalid OTP")
         if time.time() > record["expires_at"]:
-            return {"success": False, "error": "OTP expired"}
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="OTP expired")
 
         users = read_json(USERS_FILE, [])
         user = next((u for u in users if u["email"] == email), None)
@@ -120,8 +129,11 @@ def verify_otp(data: VerifyOtpRequest):
         OTP_STORE.pop(email, None)
 
         return {"success": True, "user": user}
+    except HTTPException:
+        raise
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=str(e))
 
 # ---------------- SLOTS ---------------- #
 
@@ -130,7 +142,8 @@ def get_slots(date: str):
     slots_data = read_json(SLOTS_FILE, {})
     config = slots_data.get("working_hours")
     if not config:
-        return {"error": "Slot configuration missing"}
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail="Slot configuration missing")
     start_h, start_m = map(int, config["start"].split(":"))
     end_h, end_m = map(int, config["end"].split(":"))
     interval = config["interval_minutes"]
@@ -138,7 +151,11 @@ def get_slots(date: str):
     bookings = read_json(BOOKINGS_FILE, [])
     booked_starts = {b["slot_start"] for b in bookings if b["status"] == "ACTIVE"}
 
-    selected = IST.localize(datetime.strptime(date, "%Y-%m-%d"))
+    try:
+        selected = IST.localize(datetime.strptime(date, "%Y-%m-%d"))
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Invalid date format, expected YYYY-MM-DD")
     current = selected.replace(hour=start_h, minute=start_m, second=0)
     end = selected.replace(hour=end_h, minute=end_m, second=0)
 
@@ -165,107 +182,154 @@ def get_slots(date: str):
 def book_slot(data: BookSlotRequest):
     email = data.email
     slot = data.slot
-    bookings = read_json(BOOKINGS_FILE, [])
+    if not email or not slot:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Missing email or slot")
 
-    # one active booking per user
-    if any(b for b in bookings if b["email"] == email and b["status"] == "ACTIVE"):
-        return {"error": "User already has an active booking"}
+    try:
+        bookings = read_json(BOOKINGS_FILE, [])
 
-    date_part, time_part = slot.split(" ", 1)
-    start_str, end_str = time_part.split("-")
+        # one active booking per user
+        if any(b for b in bookings if b["email"] == email and b["status"] == "ACTIVE"):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail="User already has an active booking")
 
-    start_dt = IST.localize(datetime.strptime(
-        f"{date_part} {start_str}", "%Y-%m-%d %I:%M %p"
-    ))
-    end_dt = IST.localize(datetime.strptime(
-        f"{date_part} {end_str}", "%Y-%m-%d %I:%M %p"
-    ))
+        try:
+            date_part, time_part = slot.split(" ", 1)
+            start_str, end_str = [s.strip() for s in time_part.split("-")]
+        except Exception:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Invalid slot format, expected 'YYYY-MM-DD HH:MM AM/PM-HH:MM AM/PM'")
 
-    if start_dt <= now_ist():
-        return {"error": "Cannot book past slot"}
+        try:
+            start_dt = IST.localize(datetime.strptime(
+                f"{date_part} {start_str}", "%Y-%m-%d %I:%M %p"
+            ))
+            end_dt = IST.localize(datetime.strptime(
+                f"{date_part} {end_str}", "%Y-%m-%d %I:%M %p"
+            ))
+        except Exception:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Invalid date/time in slot")
 
-    if any(b for b in bookings if b["slot_start"] == start_dt.isoformat()):
-        return {"error": "Slot already booked"}
+        if start_dt <= now_ist():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Cannot book past slot")
 
-    booking = {
-        "id": str(uuid.uuid4()),
-        "email": email,
-        "slot_start": start_dt.isoformat(),
-        "slot_end": end_dt.isoformat(),
-        "status": "ACTIVE"
-    }
+        if any(b for b in bookings if b["slot_start"] == start_dt.isoformat()):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                detail="Slot already booked")
 
-    bookings.append(booking)
-    write_json(BOOKINGS_FILE, bookings)
+        booking = {
+            "id": str(uuid.uuid4()),
+            "email": email,
+            "slot_start": start_dt.isoformat(),
+            "slot_end": end_dt.isoformat(),
+            "status": "ACTIVE"
+        }
 
-    notifications = read_json(NOTIFICATIONS_FILE, [])
-    notifications.append({
-        "id": str(uuid.uuid4()),
-        "email": email,
-        "message": f"Booking confirmed for {start_str}",
-        "type": "CONFIRMATION",
-        "created_at": now_ist().isoformat(),
-        "cleared": False
-    })
-    write_json(NOTIFICATIONS_FILE, notifications)
+        bookings.append(booking)
+        write_json(BOOKINGS_FILE, bookings)
 
-    return {"message": "Booked successfully"}
+        notifications = read_json(NOTIFICATIONS_FILE, [])
+        notifications.append({
+            "id": str(uuid.uuid4()),
+            "email": email,
+            "message": f"Booking confirmed for {start_str}",
+            "type": "CONFIRMATION",
+            "created_at": now_ist().isoformat(),
+            "cleared": False
+        })
+        write_json(NOTIFICATIONS_FILE, notifications)
+
+        return {"success": True, "message": "Booked successfully", "booking": booking}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=str(e))
 
 # ---------------- NOTIFICATIONS ---------------- #
 
 @app.get("/api/notifications")
 def get_notifications(email: str):
-    bookings = read_json(BOOKINGS_FILE, [])
-    notifications = read_json(NOTIFICATIONS_FILE, [])
+    try:
+        bookings = read_json(BOOKINGS_FILE, [])
+        notifications = read_json(NOTIFICATIONS_FILE, [])
 
-    # reminder generation
-    for b in bookings:
-        if b["email"] != email or b["status"] != "ACTIVE":
-            continue
+        # reminder generation
+        for b in bookings:
+            if b["email"] != email or b["status"] != "ACTIVE":
+                continue
 
-        start = datetime.fromisoformat(b["slot_start"])
-        if 0 <= (start - now_ist()).total_seconds() <= 600:
-            if not any(
-                n for n in notifications
-                if n["email"] == email and n["type"] == "REMINDER" and not n["cleared"]
-            ):
-                notifications.append({
-                    "id": str(uuid.uuid4()),
-                    "email": email,
-                    "message": "Your appointment is in 10 minutes",
-                    "type": "REMINDER",
-                    "created_at": now_ist().isoformat(),
-                    "cleared": False
-                })
+            try:
+                start = datetime.fromisoformat(b["slot_start"])
+            except Exception:
+                continue
 
-    write_json(NOTIFICATIONS_FILE, notifications)
+            if 0 <= (start - now_ist()).total_seconds() <= 600:
+                if not any(
+                    n for n in notifications
+                    if n["email"] == email and n["type"] == "REMINDER" and not n["cleared"]
+                ):
+                    notifications.append({
+                        "id": str(uuid.uuid4()),
+                        "email": email,
+                        "message": "Your appointment is in 10 minutes",
+                        "type": "REMINDER",
+                        "created_at": now_ist().isoformat(),
+                        "cleared": False
+                    })
 
-    return [
-        n for n in notifications
-        if n["email"] == email and not n["cleared"]
-    ]
+        write_json(NOTIFICATIONS_FILE, notifications)
+
+        return [
+            n for n in notifications
+            if n["email"] == email and not n["cleared"]
+        ]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=str(e))
 
 @app.post("/api/notifications/clear")
 def clear_notification(notification_id: str):
-    notifications = read_json(NOTIFICATIONS_FILE, [])
-    for n in notifications:
-        if n["id"] == notification_id:
-            n["cleared"] = True
-    write_json(NOTIFICATIONS_FILE, notifications)
-    return {"success": True}
+    try:
+        notifications = read_json(NOTIFICATIONS_FILE, [])
+        found = False
+        for n in notifications:
+            if n["id"] == notification_id:
+                n["cleared"] = True
+                found = True
+        if not found:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                                detail="Notification not found")
+        write_json(NOTIFICATIONS_FILE, notifications)
+        return {"success": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=str(e))
 
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR / "static"
 
-app.mount(
-    "/assets",
-    StaticFiles(directory=FRONTEND_DIR / "assets"),
-    name="assets"
-)
+# app.mount(
+#     "/assets",
+#     StaticFiles(directory=FRONTEND_DIR / "assets"),
+#     name="assets"
+# )
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
-def serve_index():
-    return FileResponse(FRONTEND_DIR / "index.html")
+def serve_frontend():
+    return FileResponse("static/index.html")
+
+# @app.get("/")
+# def serve_index():
+#     return FileResponse(FRONTEND_DIR / "index.html")
 
 @app.get("/{path:path}")
 def serve_spa(path: str):

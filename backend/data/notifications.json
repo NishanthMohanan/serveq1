@@ -22,5 +22,21 @@
     "type": "CONFIRMATION",
     "created_at": "2026-01-30T00:26:13.184464+05:30",
     "cleared": false
+  },
+  {
+    "id": "753a85e9-31a6-4235-a587-fc50049a47d6",
+    "email": "pub@gmail.com",
+    "message": "Booking confirmed for 10:00 AM",
+    "type": "CONFIRMATION",
+    "created_at": "2026-01-30T06:44:44.253113+05:30",
+    "cleared": false
+  },
+  {
+    "id": "af8bd54e-1ef5-4a8a-bd91-c47b5af87b31",
+    "email": "nishanth@gmail.com",
+    "message": "Booking confirmed for 10:30 AM",
+    "type": "CONFIRMATION",
+    "created_at": "2026-01-30T06:45:59.600667+05:30",
+    "cleared": false
   }
 ]

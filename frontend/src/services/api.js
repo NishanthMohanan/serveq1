@@ -1,5 +1,7 @@
 const BASE_URL =
-  import.meta.env.VITE_API_URL || `${window.location.origin}/api`;
+  import.meta.env.MODE === "development"
+    ? "http://localhost:8000"
+    : "/api";
 
 export const sendOtp = async (email, username) => {
   const res = await fetch(`${BASE_URL}/login`, {
