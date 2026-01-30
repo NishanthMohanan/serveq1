@@ -316,21 +316,22 @@ def clear_notification(notification_id: str):
 BASE_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = BASE_DIR / "static"
 
-# app.mount(
-#     "/assets",
-#     StaticFiles(directory=FRONTEND_DIR / "assets"),
-#     name="assets"
-# )
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Mount the entire static folder
+app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
+# Optional: mount assets separately if you need /assets path
+app.mount(
+    "/assets",
+    StaticFiles(directory=FRONTEND_DIR / "assets"),
+    name="assets"
+)
+
+# Serve the main SPA entry
 @app.get("/")
-def serve_frontend():
-    return FileResponse("static/index.html")
+def serve_index():
+    return FileResponse(FRONTEND_DIR / "index.html")
 
-# @app.get("/")
-# def serve_index():
-#     return FileResponse(FRONTEND_DIR / "index.html")
-
+# Catch-all for SPA routing
 @app.get("/{path:path}")
 def serve_spa(path: str):
     file_path = FRONTEND_DIR / path
