@@ -1,10 +1,10 @@
 const BASE_URL =
   import.meta.env.MODE === "development"
     ? "http://localhost:8000"
-    : "/api";
+    : ""; 
 
 export const sendOtp = async (email, username) => {
-  const res = await fetch(`${BASE_URL}/login`, {
+  const res = await fetch(`${BASE_URL}/api/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, username }),
@@ -17,7 +17,7 @@ export const sendOtp = async (email, username) => {
 
 
 export async function verifyOtp(email, otp) {
-  const res = await fetch(`${BASE_URL}/verify-otp`, {
+  const res = await fetch(`${BASE_URL}/api/verify-otp`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -35,7 +35,7 @@ export async function verifyOtp(email, otp) {
 }
 
 export async function fetchSlots(date) {
-  const res = await fetch(`${BASE_URL}/slots?date=${date}`);
+  const res = await fetch(`${BASE_URL}/api/slots?date=${date}`);
   const data = await res.json();
   if (!res.ok || data.error) {
     throw new Error(data.error || "Failed to fetch slots");
@@ -44,7 +44,7 @@ export async function fetchSlots(date) {
 }
 
 export async function bookSlot(email, slot) {
-  const res = await fetch(`${BASE_URL}/book`, {
+  const res = await fetch(`${BASE_URL}/api/book`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, slot }),
