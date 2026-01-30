@@ -11,7 +11,7 @@ export const sendOtp = async (email, username) => {
   });
 
   const data = await res.json();
-  if (!res.ok || data.error) throw new Error(data.error);
+  if (!res.ok) throw new Error(data.detail || "Login failed");
   return data;
 };
 
@@ -26,19 +26,17 @@ export async function verifyOtp(email, otp) {
   });
 
   const data = await res.json();
-
-  if (!res.ok || data.error) {
-    throw new Error(data.error || "Failed to verify OTP");
+  if (!res.ok) {
+    throw new Error(data.detail || "Failed to verify OTP");
   }
-
   return data;
 }
 
 export async function fetchSlots(date) {
   const res = await fetch(`${BASE_URL}/api/slots?date=${date}`);
   const data = await res.json();
-  if (!res.ok || data.error) {
-    throw new Error(data.error || "Failed to fetch slots");
+  if (!res.ok) {
+    throw new Error(data.detail || "Failed to fetch slots");
   }
   return data;
 }
@@ -51,8 +49,8 @@ export async function bookSlot(email, slot) {
   });
 
   const data = await res.json();
-  if (!res.ok || data.error) {
-    throw new Error(data.error || "Failed to book slot");
+  if (!res.ok) {
+    throw new Error(data.detail || "Failed to book slot");
   }
   return data;
 }
